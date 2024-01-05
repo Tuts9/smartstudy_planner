@@ -27,7 +27,7 @@ O aplicativo mantém um histórico das pesquisas realizadas incluindo o tópico 
 ## Configurações e Uso
 
 1. Instale as bibliotecas necessárias: `fpdf`, `customtkinter`, `json`, `requests`, `sqlite3`.
-2. Entre no site da OpenAI e coloque a sua chave API na variável `API_KEY`.
+2. Entre no site da [OpenAI](https://openai.com/) e coloque a sua chave API na variável `API_KEY`.
 3. Execute o arquivo `smartstudy_planenr.py` para iniciar o aplicativo.
 
 ## Desenvolvimento e Contribuições
