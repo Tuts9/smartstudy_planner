@@ -38,10 +38,6 @@ O código fonte está disponível no arquivo `smartstudy_planner.py`. Sinta-se �
 
 Esta aplicativo foi Desenvolvido por Arthur Rodrigues (Tuts9).
 
-## Licença
-
-Este código é disponibilizado sob a licença [MIT](https://opensource.org/licenses/MIT), o que significa que você é livre para usá-lo, modificá-lo e distribuí-lo da maneira que desejar, desde que mantenha o aviso de direitos autorais original e não responsabilize os autores por qualquer dano ou perda relacionada ao uso deste código.
-
 ## Contato
 
 Para relatar problemas, enviar feedback ou obter mais informações, entre em contato com Arthur em (arthurdevti@gmail.com).
