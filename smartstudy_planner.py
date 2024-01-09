@@ -5,8 +5,9 @@ from datetime import date
 import requests
 import sqlite3
 import json
+import threading
 
-API_KEY = 'sua_chave_API'
+API_KEY = 'SUA_CHAVE_API'
 
 ctk.set_appearance_mode('System')
 ctk.set_default_color_theme('blue')
@@ -60,6 +61,12 @@ class App(ctk.CTk):
 
         self.title_label = ctk.CTkLabel(self, text='Titulo', font=ctk.CTkFont(size=20, weight='bold'))
         self.title_label.grid(row=0, column=1, columnspan=3, padx=(10,10), pady=(10,0), sticky='nsew')
+        
+        self.progressbar_1 = ctk.CTkProgressBar(self.sidebar_frame)
+        self.progressbar_1.grid(row=3, column=0, padx=(10, 10), pady=(10, 10), sticky='ew')
+        self.progressbar_1.configure(mode="determinate")
+        self.progressbar_1.set(0)
+        
         self.textbox = ctk.CTkTextbox(self, width=400, height=300, state='disabled')
         self.textbox.grid(row=1, column=1, columnspan=3, rowspan=2, padx=(20,20), pady=(20,0), sticky='nsew')
 
@@ -68,8 +75,28 @@ class App(ctk.CTk):
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)
 
+    def clean_textbox(self):
+        self.textbox.configure(state='normal')
+        self.textbox.delete('0.0', 'end')
+        self.textbox.configure(state='disabled')
+
+    def update(self):
+        self.clean_textbox()
+
+        self.title_label.configure(text=f'{self.prompt_escol}: {self.assunto.capitalize()}')
+        self.textbox.configure(state='normal')
+        self.textbox.insert('0.0', self.mensagem)
+        self.progressbar_1.stop()
+        self.progressbar_1.set(0)
+
+        self.data_atual = date.today()
+        self.salvar_pesquisa()
+
+        self.textbox.configure(state='disabled')
+        self.main_entry.delete('0', 'end')
+
     def pesquisa(self):  
-        
+
         self.prompt_escol = self.combobox_var.get()
         self.assunto = self.main_entry.get()
 
@@ -83,26 +110,15 @@ class App(ctk.CTk):
 
         else:
             messagebox.showerror('Erro', 'Escolha uma das duas opções!')
+            return
 
-        self.gerar_resposta(prompt)
-        
-        self.clean_textbox()
-        self.title_label.configure(text=f'{self.prompt_escol}: {self.assunto.capitalize()}')
-        self.textbox.configure(state='normal')
-        self.textbox.insert('0.0', self.mensagem)
+        ger = threading.Thread(target=self.gerar_resposta, args=(prompt,))
+        ger.start()
 
-        self.data_atual = date.today()
-        self.salvar_pesquisa()
-
-        self.textbox.configure(state='disabled')
-        self.main_entry.delete('0', 'end')
-
-    def clean_textbox(self):
-        self.textbox.configure(state='normal')
-        self.textbox.delete('0.0', 'end')
-        self.textbox.configure(state='disabled')
+        self.progressbar_1.start()
 
     def gerar_resposta(self, prompt):
+
         headers = {'Authorization': f'Bearer {API_KEY}', 'Content-Type': 'application/json'}
         link = 'https://api.openai.com/v1/chat/completions'
         id_modelo = 'gpt-3.5-turbo'
@@ -111,15 +127,23 @@ class App(ctk.CTk):
 
         body_mensagem = {
             'model': id_modelo,
+            'stream': False,
             'messages': [{'role': 'user', 'content': f'{subject}'}]
         }
         body_mensagem = json.dumps(body_mensagem)
+        
+        try:
+            requisicao = requests.post(link, headers=headers, data=body_mensagem, timeout=None)
+            resposta = requisicao.json()
 
-        requisicao = requests.post(link, headers=headers, data=body_mensagem)
-        resposta = requisicao.json()
-        # print(resposta)
-        self.mensagem = resposta['choices'][0]['message']['content']
-        # print(self.mensagem)
+            if 'choices' in resposta:
+                self.mensagem = resposta['choices'][0]['message']['content']
+                # Atualizar a interface gráfica com a resposta da API
+                self.update()
+            else:
+                self.mensagem = "Resposta não recebida."
+        except requests.exceptions.RequestException as e:
+            self.mensagem = f"Erro na requisição: {str(e)}"
         
     def selecionar_arquivo(self):
         messagebox.showinfo('Aviso', 'Em breve')
@@ -131,6 +155,7 @@ class App(ctk.CTk):
                 CREATE TABLE IF NOT EXISTS tb_pesquisa_historic(
                     N_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                     T_PESQUISA TEXT NOT NULL,
+                    T_METODO TEXT NOT NULL,
                     D_DATE DATE NOT NULL
             )'''
         )
@@ -139,12 +164,14 @@ class App(ctk.CTk):
 
     def salvar_pesquisa(self):
         pesquisa = self.main_entry.get()
+        metodo = self.combobox_var.get()
         data = self.data_atual
         
         conexao = sqlite3.connect('pesquisas.db')
         c = conexao.cursor()
         c.execute('''
-                    INSERT INTO tb_pesquisa_historic (T_PESQUISA, D_DATE) VALUES (?, ?)''', (pesquisa, data))
+                    INSERT INTO tb_pesquisa_historic (T_PESQUISA, T_METODO, D_DATE) VALUES (?, ?, ?)''', 
+                    (pesquisa, metodo, data))
         
         conexao.commit()
         conexao.close()
@@ -166,8 +193,8 @@ class App(ctk.CTk):
             pdf.multi_cell(190, 10, f'{title}', align='C')
             pdf.ln()
             pdf.set_font('Arial', '', 12)
-            pdf.multi_cell(100, 5, f'{text}', align='L')
-            nome_pdf = f'./gpt/{title}.pdf'
+            pdf.multi_cell(190, 5, f'{text}', align='L')
+            nome_pdf = f'./{title}.pdf'
             pdf.output(f'{nome_pdf}')
 
             messagebox.showinfo('Aviso', 'O arquivo PDF foi criado com sucesso.')
@@ -180,21 +207,23 @@ class HistoricWindow(ctk.CTkToplevel):
         super().__init__()
 
         self.title('Histórico de pesquisas')
-        self.geometry('500x300')
+        self.geometry('600x300')
         self.resizable(False, False)
 
-        self.frame_main = ctk.CTkFrame(self, fg_color='transparent', width=500)
+        self.frame_main = ctk.CTkFrame(self, fg_color='transparent', width=600)
         self.frame_main.grid(row=0, column=0)
 
-        self.tree = ttk.Treeview(self.frame_main, columns=('ID', 'Pesquisa', 'Data'), show='headings')
+        self.tree = ttk.Treeview(self.frame_main, columns=('ID', 'Pesquisa', 'Método', 'Data'), show='headings')
 
         self.tree.heading('ID', text='ID')
         self.tree.heading('Pesquisa', text='Pesquisa')
+        self.tree.heading('Método', text='Método')
         self.tree.heading('Data', text='Data')
 
-        self.tree.column('ID', width=100, anchor='center')
-        self.tree.column('Pesquisa', width=200, anchor='center')
-        self.tree.column('Data', width=200, anchor='center')
+        self.tree.column('ID', width=50, anchor='center')
+        self.tree.column('Pesquisa', width=250, anchor='center')
+        self.tree.column('Método', width=100, anchor='center')
+        self.tree.column('Data', width=100, anchor='center')
 
         self.tree.pack(side='left', fill='both', expand=True)
         self.listar_pesquisas()
