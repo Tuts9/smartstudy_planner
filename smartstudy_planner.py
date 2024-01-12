@@ -81,9 +81,10 @@ class App(ctk.CTk):
         self.textbox.configure(state='disabled')
 
     def update(self):
+        self.titulo = f'{self.prompt_escol}: {self.assunto.capitalize()}'
         self.clean_textbox()
 
-        self.title_label.configure(text=f'{self.prompt_escol}: {self.assunto.capitalize()}')
+        self.title_label.configure(text=f'{self.titulo}')
         self.textbox.configure(state='normal')
         self.textbox.insert('0.0', self.mensagem)
         self.progressbar_1.stop()
@@ -190,7 +191,7 @@ class App(ctk.CTk):
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font('Arial', 'B', 18)
-            pdf.multi_cell(190, 10, f'{title}', align='C')
+            pdf.multi_cell(190, 10, f'{self.titulo}', align='C')
             pdf.ln()
             pdf.set_font('Arial', '', 12)
             pdf.multi_cell(190, 5, f'{text}', align='L')
