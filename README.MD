@@ -35,6 +35,8 @@ Foi necessário o uso da biblioteca `threading` para estar usando um processo ex
 
 ## Configurações e Uso
 
+*De preferência crie uma pasta e coloque o arquivo do código dentro desta pasta.*
+
 1. Instale as bibliotecas necessárias: `fpdf`, `customtkinter`, `json`, `requests`, `sqlite3`.
 2. Entre no site da OpenAI e coloque a sua chave API na variável `API_KEY`.
 
