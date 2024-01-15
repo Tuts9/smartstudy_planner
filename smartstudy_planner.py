@@ -195,8 +195,8 @@ class App(ctk.CTk):
             pdf.ln()
             pdf.set_font('Arial', '', 12)
             pdf.multi_cell(190, 5, f'{text}', align='L')
-            nome_pdf = f'./{title}.pdf'
-            pdf.output(f'{nome_pdf}')
+            nome_pdf = f'{title}.pdf'
+            pdf.output(nome_pdf)
 
             messagebox.showinfo('Aviso', 'O arquivo PDF foi criado com sucesso.')
 
