@@ -142,7 +142,7 @@ class App(ctk.CTk):
                 # Atualizar a interface gráfica com a resposta da API
                 self.update()
             else:
-                self.mensagem = "Resposta não recebida."
+                self.mensagem = "Resposta não recebida, verifique sua chave API e tente novamente."
                 self.update()
         except requests.exceptions.RequestException as e:
             self.mensagem = f"Erro na requisição: {str(e)}"
