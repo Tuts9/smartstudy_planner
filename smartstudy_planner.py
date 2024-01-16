@@ -143,8 +143,10 @@ class App(ctk.CTk):
                 self.update()
             else:
                 self.mensagem = "Resposta não recebida."
+                self.update()
         except requests.exceptions.RequestException as e:
             self.mensagem = f"Erro na requisição: {str(e)}"
+            self.update()
         
     def selecionar_arquivo(self):
         messagebox.showinfo('Aviso', 'Em breve')
